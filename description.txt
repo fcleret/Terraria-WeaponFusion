@@ -1,0 +1,5 @@
+Weapon Fusion is a mod that allows the fusion of two identical items of the same level, to increase their level and stats.
+To do this, simply right-click on the weapon to be upgraded and it will automatically search the inventory if a match exists.
+
+v1.0:
+- Mod uploaded
