@@ -1,5 +1,23 @@
 Weapon Fusion is a mod that allows the fusion of two identical items of the same level, to increase their level and stats.
 To do this, simply right-click on the weapon to be upgraded and it will automatically search the inventory if a match exists.
 
+It's functional with items from mods, however there may be some bugs.
+We will do our best to add fixes and features as time goes on.
+
+
+Planned fixes and features:
+- Prevent level reset when item is moved out of player's inventory in multiplayer
+- Be able to accept reforge stats
+- Be able to equip gear with right click when it can no longer be merged
+- And more ...
+
+
+# Summary of updates
+
+v1.01:
+- Added level cap in settings
+- Fix to prevent stacked items from being merged and allow splitting
+- Fix to prevent throwing weapons from being merged
+
 v1.0:
 - Mod uploaded
