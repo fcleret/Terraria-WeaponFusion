@@ -4,11 +4,24 @@ To do this, simply right-click on the weapon to be upgraded and it will automati
 It's functional with items from mods, however there may be some bugs.
 We will do our best to add fixes and features as time goes on.
 
+Github: https://github.com/fcleret/Terraria-WeaponFusion
 
-Planned fixes and features:
-- Prevent level reset when item is moved out of player's inventory in multiplayer
+
+# Controls
+
+- RightClick: Merge an item with another of same level (or can equip it if nothing was found)
+- Shift + RightClick: Merge an item with all others
+
+
+# Planned fixes and features
+
 - Be able to accept reforge stats
-- Be able to equip gear with right click when it can no longer be merged
+- Have a visual level indicator on an inventory slot
+- Have more stats multipliers (atk speed, mana cost, ...)
+- Have multipliers and/or level cap affected by item rarity
+- Have compatibility with Magic Storage
+- No need to reload config for multipliers
+- Possibility to unmerge an item
 - And more ...
 
 
@@ -16,8 +29,12 @@ Planned fixes and features:
 
 v1.01:
 - Added level cap in settings
-- Fix to prevent stacked items from being merged and allow splitting
-- Fix to prevent throwing weapons from being merged
+- Can merge all items in once
+- Fix to prevent stacked items from being merged
+- Fix to be able to interact with items that can no longer be merged (only if max level)
+- Fix to prevent throwing weapons from being merged (Only reforgeable items can be merged)
+- Fix to prevent level reset when item is moved out of player's inventory in multiplayer
+- Fix to prevent consuming favorite items
 
 v1.0:
 - Mod uploaded

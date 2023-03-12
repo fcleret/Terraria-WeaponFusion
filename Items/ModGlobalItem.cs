@@ -1,25 +1,26 @@
 ﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Terraria;
 using Terraria.ModLoader;
-using Terraria.ModLoader.Config;
 using Terraria.ModLoader.IO;
 
 namespace WeaponFusion.Items
 {
-	public class ModGlobalItem : GlobalItem
+    public class ModGlobalItem : GlobalItem
 	{
 		public override bool InstancePerEntity => true;
-		public int level = 1;
+        public int level = 1;
 
 		#region Override Methods
 
 		public override void ModifyTooltips(Item item, List<TooltipLine> tooltips)
 		{
-			if (CheckCompatibility(item) != CompatibleType.None)
+			if (CanHaveLevel(item))
 			{
-				TooltipLine line = new(Mod, "", $"Level: {level}")
+				TooltipLine line = new(Mod, "", $"Level: {level}{(IsMaxLevel(item) ? " [Max]" : string.Empty)}")
 				{
 					OverrideColor = Color.Cyan
 				};
@@ -29,79 +30,89 @@ namespace WeaponFusion.Items
 
 		public override bool CanRightClick(Item item)
 		{
-			return CheckCompatibility(item) != CompatibleType.None || base.CanRightClick(item);
+            return (CanMerge(item) && (Main.keyState.PressingShift() || HasAnyInInventory(item)))
+                || base.CanRightClick(item);
 		}
 
 		public override bool ConsumeItem(Item item, Player player)
 		{
-			return CheckCompatibility(item) == CompatibleType.None && base.ConsumeItem(item, player);
+			return !CanHaveLevel(item) && base.ConsumeItem(item, player);
 		}
 
 		public override void RightClick(Item item, Player player)
         {
-            bool isUnderMaxLevel = GetLevel(item) < (int)GetConfigValue(nameof(WeaponFusionConfig.MaxLevel));
-            if (isUnderMaxLevel && GetCombustibleItem(item, player) is Item combustibleItem)
-			{
-				SetLevel(item, GetLevel(item) + 1);
-				combustibleItem.TurnToAir();
-			}
-			else
-			{
-				base.RightClick(item, player);
-			}
-		}
+            if (Main.keyState.PressingShift())
+            {
+                CombineAllItem(item, player);
+            }
+            else if (GetCombustibleItems(item, player, true).FirstOrDefault() is Item combustibleItem)
+            {
+                SetLevel(item, GetLevel(item) + 1);
+                combustibleItem.TurnToAir();
+            }
+        }
 
-		public override void PostReforge(Item item)
+        public override void PostReforge(Item item)
 		{
-			SetLevel(item, GetLevel(item));
+            if (CanHaveLevel(item))
+			    SetLevel(item, GetLevel(item));
 		}
 
 		public override void LoadData(Item item, TagCompound tag)
-		{
-			SetLevel(item, tag.Get<int>(nameof(level)));
+        {
+            if (CanHaveLevel(item))
+                SetLevel(item, tag.Get<int>(nameof(level)));
 		}
 
 		public override void SaveData(Item item, TagCompound tag)
+        {
+            if (CanHaveLevel(item))
+                tag.Set(nameof(level), GetLevel(item));
+        }
+
+        public override void NetReceive(Item item, BinaryReader reader)
+        {
+            if (CanHaveLevel(item))
+                SetLevel(item, reader.ReadInt32());
+        }
+
+        public override void NetSend(Item item, BinaryWriter writer)
+        {
+            if (CanHaveLevel(item))
+                writer.Write(GetLevel(item));
+        }
+
+        #endregion
+
+        #region Custom Methods
+
+        public static void SetLevel(Item item, int value)
 		{
-			tag.Set(nameof(level), GetLevel(item));
-		}
+            /*
+			 * To use in next patch
+			 * 
+            StatModifier modifier = new(1, WeaponFusionConfig.Current.MultDamage);
+			modifier.ApplyTo(defaultItem.damage);
+			*/
 
-		#endregion
+            item.GetGlobalItem<ModGlobalItem>().level = value;
+			foreach (EStatType compatibleStats in GetCompatibleStats(item))
+            {
+                switch (compatibleStats)
+                {
+                    case EStatType.Damage:
+                        item.damage = GetValueByLevel(item.OriginalDamage, value, WeaponFusionConfig.Current.MultDamage);
+                        break;
+                    case EStatType.Defense:
+                        item.defense = GetValueByLevel(item.OriginalDefense, value, WeaponFusionConfig.Current.MultDefense);
+                        break;
+                }
+            }
+        }
 
-		#region Custom Methods
-
-		public static void SetLevel(Item item, int value)
-		{
-			Item defaultItem = new();
-			defaultItem.SetDefaults(item.netID);
-
-			item.GetGlobalItem<ModGlobalItem>().level = value;
-
-			switch (CheckCompatibility(item))
-			{
-				case CompatibleType.Both:
-					item.damage = GetValueByLevel(defaultItem.damage, value, (float)GetConfigValue(nameof(WeaponFusionConfig.MultDamage)));
-					item.defense = GetValueByLevel(defaultItem.defense, value, (float)GetConfigValue(nameof(WeaponFusionConfig.MultDefense)));
-					break;
-				case CompatibleType.Damage:
-					item.damage = GetValueByLevel(defaultItem.damage, value, (float)GetConfigValue(nameof(WeaponFusionConfig.MultDamage)));
-					break;
-				case CompatibleType.Defense:
-					item.defense = GetValueByLevel(defaultItem.defense, value, (float)GetConfigValue(nameof(WeaponFusionConfig.MultDefense)));
-					break;
-				default:
-					break;
-			}
-		}
-
-		public static int GetLevel(Item item)
+        public static int GetLevel(Item item)
 		{
 			return item.GetGlobalItem<ModGlobalItem>().level;
-		}
-
-		private static object GetConfigValue(string valueName)
-		{
-			return WeaponFusionConfig.Current.GetType().GetField(valueName).GetValue(WeaponFusionConfig.Current);
 		}
 
 		private static int GetValueByLevel(int initialValue, int level, float multiplier)
@@ -110,59 +121,107 @@ namespace WeaponFusion.Items
 			return returnValue < 0 ? 0 : returnValue;
 		}
 
-		private static Item GetCombustibleItem(Item item, Player player)
+        private static bool CanMerge(Item item)
+        {
+            return CanHaveLevel(item) && item.stack == 1 && !IsMaxLevel(item);
+        }
+
+        private static bool CanHaveLevel(Item item)
+        {
+            bool isBlacklisted = WeaponFusionConfig.Current.Blacklist.Any(e => e.Type == item.netID);
+            return item.IsCandidateForReforge && !isBlacklisted && GetCompatibleStats(item).Count > 0;
+        }
+
+		private static List<EStatType> GetCompatibleStats(Item item)
 		{
-			if (CheckCompatibility(item) != CompatibleType.None)
-			{
-				foreach (Item itemSlot in player.inventory)
-				{
-					if (!itemSlot.Equals(player.HeldItem)
-						&& !itemSlot.Equals(item)
-						&& itemSlot.netID == item.netID
-						&& GetLevel(itemSlot) == GetLevel(item))
-					{
-						return itemSlot;
-					}
-				}
-			}
-			return null;
+            List<EStatType> compatibleStats = new();
+			if (item.OriginalDamage > 0)
+				compatibleStats.Add(EStatType.Damage);
+            if (item.OriginalDefense > 0)
+                compatibleStats.Add(EStatType.Defense);
+
+			return compatibleStats;
+        }
+
+		private static bool HasAnyInInventory(Item item)
+		{
+			return GetCombustibleItems(item, Main.CurrentPlayer, true).Count > 0;
 		}
 
-		private static CompatibleType CheckCompatibility(Item item)
-		{
-			Item defaultItem = new();
-			defaultItem.SetDefaults(item.netID);
-
-			CompatibleType type = CompatibleType.None;
-
-			// IsCandidateForReforge ?
-
-			bool isBlacklisted = ((List<ItemDefinition>)GetConfigValue(nameof(WeaponFusionConfig.Blacklist))).Any(e => e.Type == item.netID);
-
-            if (!isBlacklisted && item.stack == 1)
+        private static List<Item> GetCombustibleItems(Item item, Player player, bool checkSameLevel = false)
+        {
+            List<Item> items = new();
+            foreach (Item combustibleItem in player.inventory)
             {
-                if (defaultItem.damage > 0 && defaultItem.IsCandidateForReforge)
-				{
-					type = CompatibleType.Damage;
-				}
-				if (defaultItem.defense > 0)
-				{
-					type = type == CompatibleType.Damage
-						? CompatibleType.Both : CompatibleType.Defense;
-				}
-			}
+                if (!combustibleItem.Equals(player.HeldItem)
+                    && !combustibleItem.Equals(item)
+                    && combustibleItem.netID == item.netID
+					&& !combustibleItem.favorited)
+                {
+                    if (checkSameLevel)
+                    {
+                        if (GetLevel(item) == GetLevel(combustibleItem))
+                        {
+                            items.Add(combustibleItem);
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        items.Add(combustibleItem);
+                    }
+                }
+            }
+            return items;
+        }
 
-			return type;
+        private static void CombineAllItem(Item item, Player player)
+        {
+            List<Item> items = GetCombustibleItems(item, player).OrderByDescending(GetLevel).ToList();
+            items.Add(item);
+            items.Reverse();
+
+            bool hasCombined = true;
+            while (hasCombined)
+            {
+                hasCombined = false;
+
+                List<int> levels = items.Select(GetLevel).Where(e => e < WeaponFusionConfig.Current.MaxLevel).Distinct().ToList();
+                foreach (int level in levels)
+                {
+                    List<Item> levelItems = items.Where(e => GetLevel(e) == level).ToList();
+                    int count = levelItems.Count;
+
+                    while (count > 1)
+                    {
+                        Item mergeItem = levelItems[0];
+                        Item conbustibleItem = levelItems[1];
+
+                        SetLevel(mergeItem, GetLevel(mergeItem) + 1);
+                        conbustibleItem.TurnToAir();
+
+                        levelItems.Remove(mergeItem);
+                        levelItems.Remove(conbustibleItem);
+                        items.Remove(conbustibleItem);
+
+                        count -= 2;
+                        hasCombined = true;
+                    }
+                }
+            }
+        }
+
+        private static bool IsMaxLevel(Item item)
+		{
+			return GetLevel(item) >= WeaponFusionConfig.Current.MaxLevel;
 		}
 
-		#endregion
-	}
+        #endregion
 
-	public enum CompatibleType
-	{
-		None,
-		Both,
-		Damage,
-		Defense
-	}
+		private enum EStatType
+		{
+			Damage,
+			Defense
+		}
+    }
 }
