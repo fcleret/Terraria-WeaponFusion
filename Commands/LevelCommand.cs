@@ -1,4 +1,5 @@
 ﻿using Terraria;
+using Terraria.Localization;
 using Terraria.ModLoader;
 using WeaponFusion.Items;
 
@@ -6,54 +7,59 @@ namespace WeaponFusion.Commands
 {
 	public class LevelCommand : ModCommand
 	{
-		public override string Command => "wf";
-		public override string Description => "Commands for Weapon Fusion's Mod.";
-		public override string Usage => "/wf level {set;add} [value]";
+		private const string nsLocalization = "Mods.WeaponFusion.Command";
+
+		public override string Command => "wfusion";
+		public override string Description => Language.GetTextValue($"{nsLocalization}.OverrideDescription");
+		public override string Usage => "/wfusion {set;add} [number]";
 		public override CommandType Type => CommandType.Chat;
 
 		public override void Action(CommandCaller caller, string input, string[] args)
 		{
+			// Main.CurrentPlayer ?
 			if (Main.ServerSideCharacter && !WeaponFusionConfig.Current.EnabledCommands) {
-				caller.Reply("This command is not allowed on server.");
+				caller.Reply(Language.GetTextValue($"{nsLocalization}.ReplyUnauthorize"));
 				return;
 			}
 
-			if (args.Length != 3)
+			int argsTotal = 2;
+			if (args.Length != argsTotal)
 			{
-				ShowUsage(caller);
+				caller.Reply(Language.GetTextValue($"{nsLocalization}.ReplyTooManyArguments", args.Length, argsTotal, Usage));
 				return;
 			}
 
-			switch (args[1])
+			if (!int.TryParse(args[1], out int nbLevel))
+			{
+				caller.Reply(Language.GetTextValue($"{nsLocalization}.ReplyParseError", args[1], Usage));
+				return;
+			}
+
+			switch (args[0])
 			{
 				case "add":
 					if (caller.Player != null)
-						AddLevel(caller, caller.Player, int.Parse(args[2]));
+						AddLevel(caller, caller.Player, nbLevel);
 					else
-						AddLevel(caller, Main.LocalPlayer, int.Parse(args[2]));
+						AddLevel(caller, Main.LocalPlayer, nbLevel);
 					break;
 
 				case "set":
 					if (caller.Player != null)
-						SetLevel(caller, caller.Player, int.Parse(args[2]));
+						SetLevel(caller, caller.Player, nbLevel);
 					else
-						SetLevel(caller, Main.LocalPlayer, int.Parse(args[2]));
+						SetLevel(caller, Main.LocalPlayer, nbLevel);
 					break;
 
 				default:
-					ShowUsage(caller);
+					caller.Reply(Language.GetTextValue($"{nsLocalization}.ReplyWrongArgument", args[0], Usage));
 					break;
 			}
 		}
 
-		private static void ShowUsage(CommandCaller caller)
-		{
-			caller.Reply("Usage: /wf level {set;add} [value]");
-		}
-
 		private static void ShowSuccess(CommandCaller caller)
 		{
-			caller.Reply("New level has been applied.");
+			caller.Reply(Language.GetTextValue($"{nsLocalization}.ReplySuccess"));
 		}
 
 		private static void AddLevel(CommandCaller caller, Player player, int value)

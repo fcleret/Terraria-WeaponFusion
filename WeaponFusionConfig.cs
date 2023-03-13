@@ -9,45 +9,62 @@ namespace WeaponFusion
 {
 	public class WeaponFusionConfig : ModConfig
 	{
-		public override ConfigScope Mode => ConfigScope.ServerSide;
+		private const string nsLocalization = "Mods.WeaponFusion.Config";
 
+		public override ConfigScope Mode => ConfigScope.ServerSide;
 		public static WeaponFusionConfig Current => ModContent.GetInstance<WeaponFusionConfig>();
 
-		[Header("Weapon Fusion")]
+		#region General
 
-		[Label("Damage multiplier")]
+		[Header($"${nsLocalization}.GeneralHeader")]
+
+		[Label($"${nsLocalization}.LevelCap")]
+		[DefaultValue(999)]
+		[Range(0, 999)]
+		public int MaxLevel;
+
+		[Label($"${nsLocalization}.Blacklist")]
+		public List<ItemDefinition> Blacklist = new()
+		{
+			{ new ItemDefinition(24) },		// Wooden sword
+			{ new ItemDefinition(284) },	// Wooden boomerang
+			{ new ItemDefinition(55) }		// Enchanted boomerang
+		};
+
+		#endregion
+
+		#region Multipliers
+
+		[Header($"${nsLocalization}.MultipliersHeader")]
+
+		[Label($"${nsLocalization}.MultiplierDamage")]
 		[DefaultValue(0.5f)]
 		[Range(0.0f, 1.0f)]
 		[ReloadRequired]
 		public float MultDamage;
 
-		[Label("Defense multiplier")]
+		[Label($"${nsLocalization}.MultiplierDefense")]
 		[DefaultValue(0.5f)]
 		[Range(0.0f, 1.0f)]
 		[ReloadRequired]
 		public float MultDefense;
 
-		[Label("Max level")]
-		[DefaultValue(999)]
-		[Range(0, 999)]
-		public int MaxLevel;
+		#endregion
 
-		[Label("Allow commands on multiplayer for non-host players")]
-		[DefaultValue(false)]
+		#region WIP
+
+		[Header($"$Mods.WeaponFusion.Global.WorkInProgress")]
+
+		[Label($"${nsLocalization}.MultiplayerCommands")]
+		[DefaultValue(true)]
 		[JsonProperty]
-		public bool EnabledCommands { get; } = false;
+		public bool EnabledCommands { get; } = true;
 
-		[Label("Override prefix")]
-		[Tooltip("Damage and defense bonus from prefix are overrides. Not configurable for now. [WIP]")]
+		[Label($"${nsLocalization}.PrefixOverride")]
+		[Tooltip($"${nsLocalization}.PrefixOverrideTooltip")]
 		[JsonProperty]
 		public bool OverridePrefix { get; } = true;
 
-		[Label("Blacklist")]
-		public List<ItemDefinition> Blacklist = new()
-		{
-			{ new ItemDefinition(24) }, // Wooden Sword
-			{ new ItemDefinition(284) }, // Wooden Boomerang
-			{ new ItemDefinition(55) } // Enchanted Boomerang
-		};
+		#endregion
 	}
 }

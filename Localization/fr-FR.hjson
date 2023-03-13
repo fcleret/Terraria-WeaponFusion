@@ -1,0 +1,33 @@
+Mods: {
+	WeaponFusion: {
+		Command: {
+			OverrideDescription: Commandes pour le mod 'Weapon Fusion'.
+			ReplyParseError: "'{0}' n'est pas un entier. Usage : {1}"
+			ReplySuccess: Le nouveau niveau a été appliqué.
+			ReplyTooManyArguments: "Il y a {0} arguments passés, seuls {1} sont requis. Usage : {2}"
+			ReplyUnauthorize: "Vous n'avez pas les droits pour exécuter cette commande."
+			ReplyWrongArgument: "L'argument '{0}' n'existe pas. Usage : {1}"
+		}
+
+		Config: {
+			Blacklist: Liste noire
+			GeneralHeader: Général
+			LevelCap: Niveau maximum
+			MultiplayerCommands: Autoriser les commandes en multijoueur (sauf OP)
+			MultiplierDamage: Dégats
+			MultiplierDefense: Défense
+			MultipliersHeader: Multiplicateurs
+			PrefixOverride: Ecrasement du préfixe
+			PrefixOverrideTooltip: Les statistiques octroyées par le niveau, écrasent celles de la reforge.
+		}
+
+		Global: {
+			WorkInProgress: WIP
+		}
+
+		GlobalItem: {
+			TooltipsLevel: "Niveau : {0} {1}"
+			TooltipsLevelMax: "[Max]"
+		}
+	}
+}

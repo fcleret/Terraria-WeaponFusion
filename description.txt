@@ -9,25 +9,37 @@ Github: https://github.com/fcleret/Terraria-WeaponFusion
 
 # Controls
 
-- RightClick: Merge an item with another of same level (or can equip it if nothing was found)
-- Shift + RightClick: Merge an item with all others
+Merge items
+	- RightClick: Merge once (or can equip it if nothing was found)
+	- Shift + RightClick: Merge all the sames
+
+Unmerge items (drop new items)
+	- Ctrl + RightClick: Unmerge once
+	- Ctrl + Shift + RightClick: Unmerge to level 1
 
 
 # Planned fixes and features
 
 - Be able to accept reforge stats
+	- Have more stats multipliers (atk speed, mana cost, ...)
+	- Have multipliers and/or level cap affected by item rarity
 - Have a visual level indicator on an inventory slot
-- Have more stats multipliers (atk speed, mana cost, ...)
-- Have multipliers and/or level cap affected by item rarity
 - Have compatibility with Magic Storage
+- Have a cost on the merge (configurable)
 - No need to reload config for multipliers
-- Possibility to unmerge an item
+- Do not merge when item is selected
 - And more ...
 
 
 # Summary of updates
 
-v1.01:
+vNext:
+- Added localization (en-US and fr-FR)
+- Reorganization of configuration parameters
+- Can unmerge items
+- Changes on commands
+
+v1.1.0:
 - Added level cap in settings
 - Can merge all items in once
 - Fix to prevent stacked items from being merged
