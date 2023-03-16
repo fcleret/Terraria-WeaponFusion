@@ -1,10 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Terraria;
-using Terraria.ID;
 using Terraria.Localization;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
@@ -14,6 +12,7 @@ namespace WeaponFusion.Items
 	public class ModGlobalItem : GlobalItem
 	{
 		private const string nsLocalization = "Mods.WeaponFusion.GlobalItem";
+		private const int MaxRecursive = 5; // x! = 120
 		public int level = 1;
 
 		public override bool InstancePerEntity => true;
@@ -35,9 +34,7 @@ namespace WeaponFusion.Items
 
 		public override bool CanRightClick(Item item)
 		{
-			bool canUnmergeOrMergeAll = (Main.keyState.PressingControl() && !item.favorited) || (!Main.keyState.PressingControl() && Main.keyState.PressingShift());
-            return (CanMerge(item) && (canUnmergeOrMergeAll || HasAnyInInventory(item)))
-				|| base.CanRightClick(item);
+			return CanMerge(item) || CanUnmerge(item) || base.CanRightClick(item);
 		}
 
 		public override bool ConsumeItem(Item item, Player player)
@@ -49,7 +46,7 @@ namespace WeaponFusion.Items
 		{
 			if (Main.keyState.PressingControl())
 			{
-				UnmergeItem(item, player, Main.keyState.PressingShift());
+				UnmergeItem(item, player, Main.keyState.PressingShift() ? MaxRecursive : 0);
 			}
 			else
 			{
@@ -71,11 +68,22 @@ namespace WeaponFusion.Items
 				SetLevel(item, GetLevel(item));
 		}
 
+		public override GlobalItem NewInstance(Item target)
+        {
+			GlobalItem globalItem = base.NewInstance(target);
+            if (CanHaveLevel(target))
+                WeaponFusionConfig.ConfigurationChanged += () => SetLevel(target, GetLevel(target));
+            return globalItem;
+		}
+
 		public override void LoadData(Item item, TagCompound tag)
 		{
 			if (CanHaveLevel(item))
-				SetLevel(item, tag.Get<int>(nameof(level)));
-		}
+			{
+                SetLevel(item, tag.Get<int>(nameof(level)));
+                WeaponFusionConfig.ConfigurationChanged += () => SetLevel(item, GetLevel(item));
+            }
+        }
 
 		public override void SaveData(Item item, TagCompound tag)
 		{
@@ -133,11 +141,23 @@ namespace WeaponFusion.Items
 		{
 			int returnValue = (int)(initialValue + ((level - 1) * initialValue * multiplier));
 			return returnValue < 0 ? 0 : returnValue;
-		}
+        }
 
-		private static bool CanMerge(Item item)
+        private static bool CanUnmerge(Item item)
+        {
+            return CanHaveLevel(item)
+                && item.stack == 1
+                && Main.keyState.PressingControl()
+				&& !item.favorited;
+        }
+
+        private static bool CanMerge(Item item)
 		{
-			return CanHaveLevel(item) && item.stack == 1 && !IsMaxLevel(item);
+            return CanHaveLevel(item)
+				&& item.stack == 1
+				&& !IsMaxLevel(item)
+                && !Main.keyState.PressingControl()
+                && (Main.keyState.PressingShift() || HasAnyInInventory(item));
 		}
 
 		private static bool CanHaveLevel(Item item)
@@ -189,7 +209,7 @@ namespace WeaponFusion.Items
 			return items;
 		}
 
-		private static void UnmergeItem(Item item, Player player, bool isRecursive)
+		private static void UnmergeItem(Item item, Player player, int recursiveCount)
         {
             if (GetLevel(item) > 1)
 			{
@@ -199,10 +219,10 @@ namespace WeaponFusion.Items
 				SetLevel(item, GetLevel(item) - 1);
 				SetLevel(unmergeItem, GetLevel(item));
 
-				if (isRecursive)
+				if (recursiveCount > 0)
                 {
-                    UnmergeItem(item, player, true);
-					UnmergeItem(unmergeItem, player, true);
+                    UnmergeItem(item, player, recursiveCount - 1);
+					UnmergeItem(unmergeItem, player, recursiveCount - 1);
                 }
 
                 player.DropItem(unmergeItem.GetSource_FromThis(), player.position, ref unmergeItem);

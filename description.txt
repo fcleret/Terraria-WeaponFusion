@@ -25,9 +25,7 @@ Unmerge items (drop new items)
 	- Have multipliers and/or level cap affected by item rarity
 - Have a visual level indicator on an inventory slot
 - Have compatibility with Magic Storage
-- Have a cost on the merge (configurable)
-- No need to reload config for multipliers
-- Do not merge when item is selected
+- Have a cost on merge (configurable)
 - And more ...
 
 
@@ -38,6 +36,7 @@ vNext:
 - Reorganization of configuration parameters
 - Can unmerge items
 - Changes on commands
+- No need to reload config for multipliers
 
 v1.1.0:
 - Added level cap in settings

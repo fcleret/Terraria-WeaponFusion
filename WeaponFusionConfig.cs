@@ -40,13 +40,11 @@ namespace WeaponFusion
 		[Label($"${nsLocalization}.MultiplierDamage")]
 		[DefaultValue(0.5f)]
 		[Range(0.0f, 1.0f)]
-		[ReloadRequired]
 		public float MultDamage;
 
 		[Label($"${nsLocalization}.MultiplierDefense")]
 		[DefaultValue(0.5f)]
 		[Range(0.0f, 1.0f)]
-		[ReloadRequired]
 		public float MultDefense;
 
 		#endregion
@@ -66,5 +64,13 @@ namespace WeaponFusion
 		public bool OverridePrefix { get; } = true;
 
 		#endregion
+
+		public static event ConfigurationChangedEventHandler ConfigurationChanged;
+		public delegate void ConfigurationChangedEventHandler();
+
+		public override void OnChanged()
+		{
+			ConfigurationChanged?.Invoke();
+		}
 	}
 }
