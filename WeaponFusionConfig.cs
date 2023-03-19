@@ -54,9 +54,8 @@ namespace WeaponFusion
 		[Header($"$Mods.WeaponFusion.Global.WorkInProgress")]
 
 		[Label($"${nsLocalization}.MultiplayerCommands")]
-		[DefaultValue(true)]
-		[JsonProperty]
-		public bool EnabledCommands { get; } = true;
+		[DefaultValue(false)]
+		public bool EnabledCommands;
 
 		[Label($"${nsLocalization}.PrefixOverride")]
 		[Tooltip($"${nsLocalization}.PrefixOverrideTooltip")]

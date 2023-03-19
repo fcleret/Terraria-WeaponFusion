@@ -12,8 +12,8 @@ Mods: {
 			OverrideDescription: Commands for the 'Weapon Fusion' mod.
 			ReplyParseError: "'{0}' isn't an integer. Usage: {1}"
 			ReplySuccess: The new level has been applied.
-			ReplyTooManyArguments: "There are {0} arguments passed, only {1} are required. Usage: {2}"
-			ReplyUnauthorize: "You don't have permission to run this command."
+			ReplyTooManyArguments: There are {0} arguments passed, only {1} are required. Usage: {2}
+			ReplyUnauthorize: You don't have permission to run this command.
 			ReplyWrongArgument: Argument "'{0}' does'nt exist. Usage: {1}"
 		}
 
@@ -29,12 +29,10 @@ Mods: {
 			PrefixOverrideTooltip: Statistics granted by level, crush those of reforge.
 		}
 
-		Global: {
-			WorkInProgress: WIP
-		}
+		Global.WorkInProgress: WIP
 
 		GlobalItem: {
-			TooltipsLevel: "Level: {0} {1}"
+			TooltipsLevel: Level: {0} {1}
 			TooltipsLevelMax: "[Max]"
 		}
 	}

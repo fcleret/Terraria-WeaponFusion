@@ -1,4 +1,5 @@
-﻿using Terraria;
+﻿using System.Linq;
+using Terraria;
 using Terraria.Localization;
 using Terraria.ModLoader;
 using WeaponFusion.Items;
@@ -9,15 +10,14 @@ namespace WeaponFusion.Commands
 	{
 		private const string nsLocalization = "Mods.WeaponFusion.Command";
 
-		public override string Command => "wfusion";
+        public override CommandType Type => CommandType.Chat;
+        public override string Command => "wfusion";
 		public override string Description => Language.GetTextValue($"{nsLocalization}.OverrideDescription");
 		public override string Usage => "/wfusion {set;add} [number]";
-		public override CommandType Type => CommandType.Chat;
 
 		public override void Action(CommandCaller caller, string input, string[] args)
-		{
-			// Main.CurrentPlayer ?
-			if (Main.ServerSideCharacter && !WeaponFusionConfig.Current.EnabledCommands) {
+        {
+			if (Netplay.Clients?.FirstOrDefault(e => e.Id == Main.CurrentPlayer.whoAmI)?.Socket.GetRemoteAddress().IsLocalHost() is true) {
 				caller.Reply(Language.GetTextValue($"{nsLocalization}.ReplyUnauthorize"));
 				return;
 			}

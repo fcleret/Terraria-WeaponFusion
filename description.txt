@@ -31,7 +31,7 @@ Unmerge items (drop new items)
 
 # Summary of updates
 
-vNext:
+v1.2.0:
 - Added localization (en-US and fr-FR)
 - Reorganization of configuration parameters
 - Can unmerge items
