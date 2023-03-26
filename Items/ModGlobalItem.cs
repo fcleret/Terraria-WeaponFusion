@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -20,15 +21,29 @@ namespace WeaponFusion.Items
 		#region Override Methods
 
 		public override void ModifyTooltips(Item item, List<TooltipLine> tooltips)
-		{
-			if (CanHaveLevel(item))
+        {
+            if (CanHaveLevel(item))
 			{
 				string textLevelMax = IsMaxLevel(item) ? Language.GetTextValue($"{nsLocalization}.TooltipsLevelMax") : string.Empty;
-				TooltipLine line = new(Mod, "", Language.GetTextValue($"{nsLocalization}.TooltipsLevel", level, textLevelMax))
+                string textDetail = !Main.keyState.PressingShift() && GetLevel(item) > 1 ? Language.GetTextValue($"{nsLocalization}.TooltipsDetail") : string.Empty;
+
+                TooltipLine line = new(Mod, "", Language.GetTextValue($"{nsLocalization}.TooltipsLevel",level, textLevelMax, textDetail))
 				{
 					OverrideColor = Color.Cyan
 				};
 				tooltips.Add(line);
+
+				if (Main.keyState.PressingShift() && GetLevel(item) > 1)
+				{
+					foreach (EStatType statType in GetCompatibleStats(item))
+					{
+                        TooltipLine damage = new(Mod, "", Language.GetTextValue($"{nsLocalization}.TooltipsMult{statType}", GetMultiplactiveByStat(item, statType)))
+						{
+							OverrideColor = Color.Cyan
+						};
+                        tooltips.Add(damage);
+                    }
+                }
 			}
 		}
 
@@ -38,13 +53,13 @@ namespace WeaponFusion.Items
 		}
 
 		public override bool ConsumeItem(Item item, Player player)
-		{
-			return !CanHaveLevel(item) && base.ConsumeItem(item, player);
+        {
+            return !CanHaveLevel(item) && base.ConsumeItem(item, player);
 		}
 
 		public override void RightClick(Item item, Player player)
-		{
-			if (Main.keyState.PressingControl())
+        {
+            if (Main.keyState.PressingControl())
 			{
 				UnmergeItem(item, player, Main.keyState.PressingShift() ? MaxRecursive : 0);
 			}
@@ -62,17 +77,34 @@ namespace WeaponFusion.Items
 			}
 		}
 
-		public override void PostReforge(Item item)
-		{
-			if (CanHaveLevel(item))
-				SetLevel(item, GetLevel(item));
-		}
+		public override void ModifyWeaponDamage(Item item, Player player, ref StatModifier damage)
+        {
+            StatModifier modifier = new(1f, GetMultiplicative(item, WeaponFusionConfig.Current.MultDamage));
+			damage = damage.CombineWith(modifier);
+
+			if (Main.keyState.PressingShift())
+				item.RebuildTooltip();
+        }
+
+		public override void ModifyWeaponCrit(Item item, Player player, ref float crit)
+        {
+            crit *= GetMultiplicative(item, WeaponFusionConfig.Current.MultCrit);
+        }
+
+		public override void ModifyWeaponKnockback(Item item, Player player, ref StatModifier knockback)
+        {
+            StatModifier modifier = new(1f, GetMultiplicative(item, WeaponFusionConfig.Current.MultKnockback));
+            knockback = knockback.CombineWith(modifier);
+        }
 
 		public override GlobalItem NewInstance(Item target)
         {
 			GlobalItem globalItem = base.NewInstance(target);
-            if (CanHaveLevel(target))
-                WeaponFusionConfig.ConfigurationChanged += () => SetLevel(target, GetLevel(target));
+            WeaponFusionConfig.ConfigurationChanged += () =>
+			{
+				if (CanHaveLevel(target))
+					SetLevel(target, GetLevel(target));
+			};
             return globalItem;
 		}
 
@@ -109,38 +141,29 @@ namespace WeaponFusion.Items
 
 		public static void SetLevel(Item item, int value)
 		{
-			/*
-			 * To use in next patch
-			 * Preference to multiplicative
-			 *
-			StatModifier modifier = new(1, WeaponFusionConfig.Current.MultDamage);
-			modifier.ApplyTo(defaultItem.damage);
-			*/
-
 			item.GetGlobalItem<ModGlobalItem>().level = value;
-			foreach (EStatType compatibleStats in GetCompatibleStats(item))
-			{
-				switch (compatibleStats)
-				{
-					case EStatType.Damage:
-						item.damage = GetValueByLevel(item.OriginalDamage, value, WeaponFusionConfig.Current.MultDamage);
-						break;
-					case EStatType.Defense:
-						item.defense = GetValueByLevel(item.OriginalDefense, value, WeaponFusionConfig.Current.MultDefense);
-						break;
-				}
-			}
-		}
+
+			double sellPrice = Math.Pow(2, value - 1) * item.value;
+            item.shopCustomPrice = sellPrice > int.MaxValue ? int.MaxValue : (int)sellPrice;
+
+			if (item.OriginalDefense > 0)
+                item.defense = GetValueByLevel(item.OriginalDefense, value, WeaponFusionConfig.Current.MultDefense);
+        }
 
 		public static int GetLevel(Item item)
 		{
 			return item.GetGlobalItem<ModGlobalItem>().level;
-		}
+        }
 
-		private static int GetValueByLevel(int initialValue, int level, float multiplier)
-		{
-			int returnValue = (int)(initialValue + ((level - 1) * initialValue * multiplier));
-			return returnValue < 0 ? 0 : returnValue;
+        private static int GetValueByLevel(int initialValue, int level, float multiplier)
+        {
+            int returnValue = (int)(initialValue + ((level - 1) * initialValue * multiplier));
+            return returnValue < 0 ? 0 : returnValue;
+        }
+
+        private static float GetMultiplicative(Item item, float multiplier)
+        {
+            return 1 + (multiplier * (GetLevel(item) - 1));
         }
 
         private static bool CanUnmerge(Item item)
@@ -164,20 +187,24 @@ namespace WeaponFusion.Items
 		{
 			bool isBlacklisted = WeaponFusionConfig.Current.Blacklist.Any(e => e.Type == item.netID);
 			return item.IsCandidateForReforge && !isBlacklisted && GetCompatibleStats(item).Count > 0;
-		}
+        }
 
-		private static List<EStatType> GetCompatibleStats(Item item)
-		{
-			List<EStatType> compatibleStats = new();
-			if (item.OriginalDamage > 0)
-				compatibleStats.Add(EStatType.Damage);
-			if (item.OriginalDefense > 0)
-				compatibleStats.Add(EStatType.Defense);
+        private static List<EStatType> GetCompatibleStats(Item item)
+        {
+            List<EStatType> compatibleStats = new();
+            if (item.damage > 0)
+                compatibleStats.Add(EStatType.Damage);
+			if (item.DamageType.UseStandardCritCalcs)
+                compatibleStats.Add(EStatType.Critical);
+            if (item.defense > 0)
+                compatibleStats.Add(EStatType.Defense);
+            if (item.knockBack > 0)
+                compatibleStats.Add(EStatType.Knockback);
 
-			return compatibleStats;
-		}
+            return compatibleStats;
+        }
 
-		private static bool HasAnyInInventory(Item item)
+        private static bool HasAnyInInventory(Item item)
 		{
 			return GetCombustibleItems(item, Main.CurrentPlayer, true).Count > 0;
 		}
@@ -268,14 +295,28 @@ namespace WeaponFusion.Items
 		private static bool IsMaxLevel(Item item)
 		{
 			return GetLevel(item) >= WeaponFusionConfig.Current.MaxLevel;
-		}
+        }
 
-		#endregion
+        private static string GetMultiplactiveByStat(Item item, EStatType stat)
+        {
+            return stat switch
+            {
+                EStatType.Damage => ((GetMultiplicative(item, WeaponFusionConfig.Current.MultDamage) * 100) - 100).ToString("N0"),
+                EStatType.Defense => ((GetMultiplicative(item, WeaponFusionConfig.Current.MultDefense) * 100) - 100).ToString("N0"),
+                EStatType.Critical => ((GetMultiplicative(item, WeaponFusionConfig.Current.MultCrit) * 100) - 100).ToString("N0"),
+                EStatType.Knockback => ((GetMultiplicative(item, WeaponFusionConfig.Current.MultKnockback) * 100) - 100).ToString("N0"),
+                _ => string.Empty
+            };
+        }
 
-		private enum EStatType
+        #endregion
+
+        private enum EStatType
 		{
 			Damage,
-			Defense
+			Defense,
+			Critical,
+			Knockback
 		}
 	}
 }

@@ -24,6 +24,8 @@ Mods: {
 			MultiplayerCommands: Allow commands in multiplayer (except OP)
 			MultiplierDamage: Damage
 			MultiplierDefense: Defense
+			MultiplierCrit: Critical strike chance
+			MultiplierKnockback: Knockback
 			MultipliersHeader: Multipliers
 			PrefixOverride: Prefix override
 			PrefixOverrideTooltip: Statistics granted by level, crush those of reforge.
@@ -32,8 +34,13 @@ Mods: {
 		Global.WorkInProgress: WIP
 
 		GlobalItem: {
-			TooltipsLevel: Level: {0} {1}
+			TooltipsLevel: Level: {0} {1} {2}
+			TooltipsDetail: - ['Shift' for detail]
 			TooltipsLevelMax: "[Max]"
+			TooltipsMultDamage: "  Damage: +{0}%"
+			TooltipsMultDefense: "  Defense: +{0}%"
+			TooltipsMultCritical: "  Critical strike chance: +{0}%"
+			TooltipsMultKnockback: "  Knockback: +{0}%"
 		}
 	}
 }

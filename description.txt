@@ -20,16 +20,21 @@ Unmerge items (drop new items)
 
 # Planned fixes and features
 
-- Be able to accept reforge stats
-	- Have more stats multipliers (atk speed, mana cost, ...)
-	- Have multipliers and/or level cap affected by item rarity
+- Have compatibility with Magic Storage and chest's inventory
 - Have a visual level indicator on an inventory slot
-- Have compatibility with Magic Storage
+- Have multipliers and/or level cap affected by item rarity
+- Have more stat multipliers (atk speed, mana cost, ...)
 - Have a cost on merge (configurable)
 - And more ...
 
 
 # Summary of updates
+
+v2.0.0:
+- Item's price changes according to its level
+- Can accept reforge stats
+- More stat multipliers available (critical strike chance, knockback)
+- Tooltips display modified stats
 
 v1.2.0:
 - Added localization (en-US and fr-FR)

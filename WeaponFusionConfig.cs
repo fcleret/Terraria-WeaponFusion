@@ -37,15 +37,25 @@ namespace WeaponFusion
 
 		[Header($"${nsLocalization}.MultipliersHeader")]
 
-		[Label($"${nsLocalization}.MultiplierDamage")]
+        [Label($"${nsLocalization}.MultiplierDefense")]
+        [DefaultValue(0.5f)]
+        [Range(0.0f, 1.0f)]
+        public float MultDefense;
+
+        [Label($"${nsLocalization}.MultiplierDamage")]
 		[DefaultValue(0.5f)]
 		[Range(0.0f, 1.0f)]
 		public float MultDamage;
 
-		[Label($"${nsLocalization}.MultiplierDefense")]
-		[DefaultValue(0.5f)]
-		[Range(0.0f, 1.0f)]
-		public float MultDefense;
+        [Label($"${nsLocalization}.MultiplierCrit")]
+        [DefaultValue(0.1f)]
+        [Range(0.0f, 1.0f)]
+        public float MultCrit;
+
+        [Label($"${nsLocalization}.MultiplierKnockback")]
+        [DefaultValue(0.01f)]
+        [Range(0.0f, 1.0f)]
+        public float MultKnockback;
 
 		#endregion
 

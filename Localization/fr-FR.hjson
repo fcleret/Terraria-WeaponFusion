@@ -24,16 +24,23 @@ Mods: {
 			MultiplayerCommands: Autoriser les commandes en multijoueur (sauf OP)
 			MultiplierDamage: Dégats
 			MultiplierDefense: Défense
+			MultiplierCrit: Chance de coup critique
+			MultiplierKnockback: Recul
 			MultipliersHeader: Multiplicateurs
 			PrefixOverride: Ecrasement du préfixe
 			PrefixOverrideTooltip: Les statistiques octroyées par le niveau, écrasent celles de la reforge.
 		}
 
-		/* Global.WorkInProgress: WIP */
+		Global.WorkInProgress: WIP
 
 		GlobalItem: {
-			TooltipsLevel: Niveau : {0} {1}
-			/* TooltipsLevelMax: "[Max]" */
+			TooltipsLevel: Niveau : {0} {1} {2}
+			TooltipsDetail: - ['Shift' pour détail]
+			TooltipsLevelMax: "[Max]"
+			TooltipsMultDamage: "  Dégats: +{0}%"
+			TooltipsMultDefense: "  Défense: +{0}%"
+			TooltipsMultCritical: "  Chance de coup critique: +{0}%"
+			TooltipsMultKnockback: "  Recul: +{0}%"
 		}
 	}
 }

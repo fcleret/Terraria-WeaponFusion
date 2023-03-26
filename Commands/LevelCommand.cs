@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Terraria;
 using Terraria.Localization;
 using Terraria.ModLoader;
@@ -17,9 +18,18 @@ namespace WeaponFusion.Commands
 
 		public override void Action(CommandCaller caller, string input, string[] args)
         {
-			if (Netplay.Clients?.FirstOrDefault(e => e.Id == Main.CurrentPlayer.whoAmI)?.Socket.GetRemoteAddress().IsLocalHost() is true) {
-				caller.Reply(Language.GetTextValue($"{nsLocalization}.ReplyUnauthorize"));
-				return;
+			try
+            {
+                if (!WeaponFusionConfig.Current.EnabledCommands
+                    && Netplay.Clients.FirstOrDefault(e => e?.Id == Main.CurrentPlayer.whoAmI)?.Socket.GetRemoteAddress().IsLocalHost() is true)
+                {
+                    caller.Reply(Language.GetTextValue($"{nsLocalization}.ReplyUnauthorize"));
+                    return;
+                }
+            }
+			catch (Exception)
+			{
+				caller.Reply("Error");
 			}
 
 			int argsTotal = 2;
