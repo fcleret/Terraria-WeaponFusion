@@ -27,8 +27,6 @@ Mods: {
 			MultiplierCrit: Chance de coup critique
 			MultiplierKnockback: Recul
 			MultipliersHeader: Multiplicateurs
-			PrefixOverride: Ecrasement du préfixe
-			PrefixOverrideTooltip: Les statistiques octroyées par le niveau, écrasent celles de la reforge.
 		}
 
 		Global.WorkInProgress: WIP

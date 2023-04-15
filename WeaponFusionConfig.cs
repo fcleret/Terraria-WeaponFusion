@@ -67,11 +67,6 @@ namespace WeaponFusion
 		[DefaultValue(false)]
 		public bool EnabledCommands;
 
-		[Label($"${nsLocalization}.PrefixOverride")]
-		[Tooltip($"${nsLocalization}.PrefixOverrideTooltip")]
-		[JsonProperty]
-		public bool OverridePrefix { get; } = true;
-
 		#endregion
 
 		public static event ConfigurationChangedEventHandler ConfigurationChanged;

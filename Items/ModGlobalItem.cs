@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Terraria;
+using Terraria.ID;
 using Terraria.Localization;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
@@ -80,9 +81,12 @@ namespace WeaponFusion.Items
 		public override void ModifyWeaponDamage(Item item, Player player, ref StatModifier damage)
         {
             StatModifier modifier = new(1f, GetMultiplicative(item, WeaponFusionConfig.Current.MultDamage));
-			damage = damage.CombineWith(modifier);
+			if (item.DamageType != DamageClass.Summon)
+			{
+                damage = damage.CombineWith(modifier);
+            }
 
-			if (Main.keyState.PressingShift())
+            if (Main.keyState.PressingShift())
 				item.RebuildTooltip();
         }
 
@@ -97,14 +101,20 @@ namespace WeaponFusion.Items
             knockback = knockback.CombineWith(modifier);
         }
 
+		public override void PostReforge(Item item)
+		{
+			if (item.DamageType == DamageClass.Summon || item.OriginalDefense > 0)
+            {
+                SetLevel(item, GetLevel(item));
+            }
+
+        }
+
 		public override GlobalItem NewInstance(Item target)
         {
 			GlobalItem globalItem = base.NewInstance(target);
-            WeaponFusionConfig.ConfigurationChanged += () =>
-			{
-				if (CanHaveLevel(target))
-					SetLevel(target, GetLevel(target));
-			};
+            AddConfigHook(target);
+
             return globalItem;
 		}
 
@@ -113,7 +123,7 @@ namespace WeaponFusion.Items
 			if (CanHaveLevel(item))
 			{
                 SetLevel(item, tag.Get<int>(nameof(level)));
-                WeaponFusionConfig.ConfigurationChanged += () => SetLevel(item, GetLevel(item));
+				AddConfigHook(item);
             }
         }
 
@@ -143,7 +153,12 @@ namespace WeaponFusion.Items
 		{
 			item.GetGlobalItem<ModGlobalItem>().level = value;
 
-			double sellPrice = Math.Pow(2, value - 1) * item.value;
+            if (item.DamageType == DamageClass.Summon)
+            {
+				item.damage = (int)(item.OriginalDamage * GetMultiplicative(item, WeaponFusionConfig.Current.MultDamage));
+            }
+
+            double sellPrice = Math.Pow(2, value - 1) * item.value;
             item.shopCustomPrice = sellPrice > int.MaxValue ? int.MaxValue : (int)sellPrice;
 
 			if (item.OriginalDefense > 0)
@@ -153,6 +168,15 @@ namespace WeaponFusion.Items
 		public static int GetLevel(Item item)
 		{
 			return item.GetGlobalItem<ModGlobalItem>().level;
+        }
+
+		private static void AddConfigHook(Item item)
+		{
+            WeaponFusionConfig.ConfigurationChanged += () =>
+            {
+                if (CanHaveLevel(item))
+                    SetLevel(item, GetLevel(item));
+            };
         }
 
         private static int GetValueByLevel(int initialValue, int level, float multiplier)
@@ -186,20 +210,25 @@ namespace WeaponFusion.Items
 		private static bool CanHaveLevel(Item item)
 		{
 			bool isBlacklisted = WeaponFusionConfig.Current.Blacklist.Any(e => e.Type == item.netID);
-			return item.IsCandidateForReforge && !isBlacklisted && GetCompatibleStats(item).Count > 0;
+			return item.netID != ItemID.None
+				&& !isBlacklisted
+				&& item.IsCandidateForReforge
+				&& GetCompatibleStats(item).Count > 0;
         }
 
         private static List<EStatType> GetCompatibleStats(Item item)
         {
             List<EStatType> compatibleStats = new();
             if (item.damage > 0)
+            {
                 compatibleStats.Add(EStatType.Damage);
-			if (item.DamageType.UseStandardCritCalcs)
-                compatibleStats.Add(EStatType.Critical);
+                if (item.DamageType.UseStandardCritCalcs)
+                    compatibleStats.Add(EStatType.Critical);
+                if (item.knockBack > 0)
+                    compatibleStats.Add(EStatType.Knockback);
+            }
             if (item.defense > 0)
                 compatibleStats.Add(EStatType.Defense);
-            if (item.knockBack > 0)
-                compatibleStats.Add(EStatType.Knockback);
 
             return compatibleStats;
         }

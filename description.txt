@@ -30,6 +30,14 @@ Unmerge items (drop new items)
 
 # Summary of updates
 
+v2.0.2:
+- Fix on crit / knockback (included other related bugs)
+- Fix level reset on armor after reforge
+- Fix inability to re-enter world after weapon fusion
+
+v2.0.1:
+- Summon weapons re-use old damage system (reforge does not affect damage) pending another solution
+
 v2.0.0:
 - Item's price changes according to its level
 - Can accept reforge stats

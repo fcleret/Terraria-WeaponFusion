@@ -27,8 +27,6 @@ Mods: {
 			MultiplierCrit: Critical strike chance
 			MultiplierKnockback: Knockback
 			MultipliersHeader: Multipliers
-			PrefixOverride: Prefix override
-			PrefixOverrideTooltip: Statistics granted by level, crush those of reforge.
 		}
 
 		Global.WorkInProgress: WIP
