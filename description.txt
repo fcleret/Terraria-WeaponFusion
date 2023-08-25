@@ -30,6 +30,9 @@ Unmerge items (drop new items)
 
 # Summary of updates
 
+v2.1.2:
+- Compatibility with Terraria 1.4.4
+
 v2.0.2:
 - Fix on crit / knockback (included other related bugs)
 - Fix level reset on armor after reforge

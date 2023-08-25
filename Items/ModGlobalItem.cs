@@ -28,7 +28,7 @@ namespace WeaponFusion.Items
 				string textLevelMax = IsMaxLevel(item) ? Language.GetTextValue($"{nsLocalization}.TooltipsLevelMax") : string.Empty;
                 string textDetail = !Main.keyState.PressingShift() && GetLevel(item) > 1 ? Language.GetTextValue($"{nsLocalization}.TooltipsDetail") : string.Empty;
 
-                TooltipLine line = new(Mod, "", Language.GetTextValue($"{nsLocalization}.TooltipsLevel",level, textLevelMax, textDetail))
+                TooltipLine line = new(Mod, "", Language.GetTextValue($"{nsLocalization}.TooltipsLevel", level, textLevelMax, textDetail))
 				{
 					OverrideColor = Color.Cyan
 				};
@@ -145,11 +145,20 @@ namespace WeaponFusion.Items
 				writer.Write(GetLevel(item));
 		}
 
-		#endregion
+        #endregion
 
-		#region Custom Methods
+        #region Custom Methods
 
-		public static void SetLevel(Item item, int value)
+        public static bool CanHaveLevel(Item item)
+        {
+            bool isBlacklisted = WeaponFusionConfig.Current.Blacklist.Any(e => e.Type == item.netID);
+            return item.netID != ItemID.None
+                && !isBlacklisted
+                && item.stack < 2
+                && GetCompatibleStats(item).Count > 0;
+        }
+
+        public static void SetLevel(Item item, int value)
 		{
 			item.GetGlobalItem<ModGlobalItem>().level = value;
 
@@ -206,15 +215,6 @@ namespace WeaponFusion.Items
                 && !Main.keyState.PressingControl()
                 && (Main.keyState.PressingShift() || HasAnyInInventory(item));
 		}
-
-		private static bool CanHaveLevel(Item item)
-		{
-			bool isBlacklisted = WeaponFusionConfig.Current.Blacklist.Any(e => e.Type == item.netID);
-			return item.netID != ItemID.None
-				&& !isBlacklisted
-				&& item.IsCandidateForReforge
-				&& GetCompatibleStats(item).Count > 0;
-        }
 
         private static List<EStatType> GetCompatibleStats(Item item)
         {
