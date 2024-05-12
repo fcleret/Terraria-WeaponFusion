@@ -11,7 +11,7 @@ using Terraria.ModLoader.IO;
 
 namespace WeaponFusion.Items
 {
-	public class ModGlobalItem : GlobalItem
+    public class ModGlobalItem : GlobalItem
 	{
 		private const string nsLocalization = "Mods.WeaponFusion.GlobalItem";
 		private const int MaxRecursive = 5; // x! = 120
@@ -113,17 +113,17 @@ namespace WeaponFusion.Items
 		public override GlobalItem NewInstance(Item target)
         {
 			GlobalItem globalItem = base.NewInstance(target);
-            AddConfigHook(target);
+            WeaponFusionConfig.ConfigurationChanged += () => OnConfigurationChanged(target);
 
             return globalItem;
 		}
 
 		public override void LoadData(Item item, TagCompound tag)
-		{
-			if (CanHaveLevel(item))
+        {
+            if (CanHaveLevel(item))
 			{
                 SetLevel(item, tag.Get<int>(nameof(level)));
-				AddConfigHook(item);
+                WeaponFusionConfig.ConfigurationChanged += () => OnConfigurationChanged(item);
             }
         }
 
@@ -131,7 +131,8 @@ namespace WeaponFusion.Items
 		{
 			if (CanHaveLevel(item))
 				tag.Set(nameof(level), GetLevel(item));
-		}
+            WeaponFusionConfig.ConfigurationChanged -= () => OnConfigurationChanged(item);
+        }
 
 		public override void NetReceive(Item item, BinaryReader reader)
 		{
@@ -143,7 +144,7 @@ namespace WeaponFusion.Items
 		{
 			if (CanHaveLevel(item))
 				writer.Write(GetLevel(item));
-		}
+        }	
 
         #endregion
 
@@ -179,13 +180,10 @@ namespace WeaponFusion.Items
 			return item.GetGlobalItem<ModGlobalItem>().level;
         }
 
-		private static void AddConfigHook(Item item)
-		{
-            WeaponFusionConfig.ConfigurationChanged += () =>
-            {
-                if (CanHaveLevel(item))
-                    SetLevel(item, GetLevel(item));
-            };
+		private static void OnConfigurationChanged(Item item)
+        {
+            if (CanHaveLevel(item))
+                SetLevel(item, GetLevel(item));
         }
 
         private static int GetValueByLevel(int initialValue, int level, float multiplier)
