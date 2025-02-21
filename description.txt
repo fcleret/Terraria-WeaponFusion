@@ -30,6 +30,12 @@ Unmerge items (drop new items)
 
 # Summary of updates
 
+v2.1.4:
+- Fix lagging issue by removing configs sync
+
+v2.1.3:
+- Fix a bug for items with special currencies
+
 v2.1.2:
 - Compatibility with Terraria 1.4.4
 
