@@ -9,12 +9,18 @@ namespace WeaponFusion.Commands
 {
 	public class LevelCommand : ModCommand
 	{
-		private const string nsLocalization = "Mods.WeaponFusion.Command";
+		#region Fields
+
+		private const string NsLocalization = "Mods.WeaponFusion.Command";
 
         public override CommandType Type => CommandType.Chat;
         public override string Command => "wfusion";
-		public override string Description => Language.GetTextValue($"{nsLocalization}.OverrideDescription");
+		public override string Description => Language.GetTextValue($"{NsLocalization}.OverrideDescription");
 		public override string Usage => "/wfusion {set;add} [number]";
+
+		#endregion
+
+		#region Methods
 
 		public override void Action(CommandCaller caller, string input, string[] args)
         {
@@ -23,7 +29,7 @@ namespace WeaponFusion.Commands
                 if (!WeaponFusionConfig.Current.EnabledCommands
                     && Netplay.Clients.FirstOrDefault(e => e?.Id == Main.CurrentPlayer.whoAmI)?.Socket.GetRemoteAddress().IsLocalHost() is true)
                 {
-                    caller.Reply(Language.GetTextValue($"{nsLocalization}.ReplyUnauthorize"));
+                    caller.Reply(Language.GetTextValue($"{NsLocalization}.ReplyUnauthorize"));
                     return;
                 }
             }
@@ -35,13 +41,13 @@ namespace WeaponFusion.Commands
 			int argsTotal = 2;
 			if (args.Length != argsTotal)
 			{
-				caller.Reply(Language.GetTextValue($"{nsLocalization}.ReplyTooManyArguments", args.Length, argsTotal, Usage));
+				caller.Reply(Language.GetTextValue($"{NsLocalization}.ReplyTooManyArguments", args.Length, argsTotal, Usage));
 				return;
 			}
 
 			if (!int.TryParse(args[1], out int nbLevel))
 			{
-				caller.Reply(Language.GetTextValue($"{nsLocalization}.ReplyParseError", args[1], Usage));
+				caller.Reply(Language.GetTextValue($"{NsLocalization}.ReplyParseError", args[1], Usage));
 				return;
 			}
 
@@ -62,14 +68,14 @@ namespace WeaponFusion.Commands
 					break;
 
 				default:
-					caller.Reply(Language.GetTextValue($"{nsLocalization}.ReplyWrongArgument", args[0], Usage));
+					caller.Reply(Language.GetTextValue($"{NsLocalization}.ReplyWrongArgument", args[0], Usage));
 					break;
 			}
 		}
 
 		private static void ShowSuccess(CommandCaller caller)
 		{
-			caller.Reply(Language.GetTextValue($"{nsLocalization}.ReplySuccess"));
+			caller.Reply(Language.GetTextValue($"{NsLocalization}.ReplySuccess"));
 		}
 
 		private static void AddLevel(CommandCaller caller, Player player, int value)
@@ -84,5 +90,7 @@ namespace WeaponFusion.Commands
 			ModGlobalItem.SetLevel(player.inventory[player.selectedItem], value);
 			ShowSuccess(caller);
 		}
+
+		#endregion
 	}
 }

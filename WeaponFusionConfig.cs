@@ -11,8 +11,8 @@ namespace WeaponFusion
 	{
 		private const string nsLocalization = "Mods.WeaponFusion.Config";
 
-		public override ConfigScope Mode => ConfigScope.ServerSide;
 		public static WeaponFusionConfig Current => ModContent.GetInstance<WeaponFusionConfig>();
+		public override ConfigScope Mode => ConfigScope.ServerSide;
 
 		#region General
 
