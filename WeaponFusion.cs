@@ -1,8 +1,7 @@
 using Terraria.ModLoader;
 
-namespace WeaponFusion
+namespace WeaponFusion;
+
+public class WeaponFusion : Mod
 {
-	public class WeaponFusion : Mod
-	{
-	}
 }

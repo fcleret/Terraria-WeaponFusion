@@ -1,73 +1,71 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Terraria.ModLoader;
 using Terraria.ModLoader.Config;
 
-namespace WeaponFusion
+namespace WeaponFusion;
+
+public class WeaponFusionConfig : ModConfig
 {
-	public class WeaponFusionConfig : ModConfig
+	private const string nsLocalization = "Mods.WeaponFusion.Config";
+
+	public static WeaponFusionConfig Current => ModContent.GetInstance<WeaponFusionConfig>();
+	public override ConfigScope Mode => ConfigScope.ServerSide;
+
+	#region General
+
+	[Header($"${nsLocalization}.GeneralHeader")]
+
+	[DefaultValue(999)]
+	[Range(0, 999)]
+	public int MaxLevel;
+
+	public List<ItemDefinition> Blacklist = new()
 	{
-		private const string nsLocalization = "Mods.WeaponFusion.Config";
+		{ new ItemDefinition(24) },		// Wooden sword
+		{ new ItemDefinition(284) },	// Wooden boomerang
+		{ new ItemDefinition(55) }		// Enchanted boomerang
+	};
 
-		public static WeaponFusionConfig Current => ModContent.GetInstance<WeaponFusionConfig>();
-		public override ConfigScope Mode => ConfigScope.ServerSide;
+	#endregion
 
-		#region General
+	#region Multipliers
 
-		[Header($"${nsLocalization}.GeneralHeader")]
+	[Header($"${nsLocalization}.MultipliersHeader")]
 
-		[DefaultValue(999)]
-		[Range(0, 999)]
-		public int MaxLevel;
+    [DefaultValue(0.5f)]
+    [Range(0.0f, 1.0f)]
+    public float MultDefense;
 
-		public List<ItemDefinition> Blacklist = new()
-		{
-			{ new ItemDefinition(24) },		// Wooden sword
-			{ new ItemDefinition(284) },	// Wooden boomerang
-			{ new ItemDefinition(55) }		// Enchanted boomerang
-		};
+	[DefaultValue(0.5f)]
+	[Range(0.0f, 1.0f)]
+	public float MultDamage;
 
-		#endregion
+    [DefaultValue(0.1f)]
+    [Range(0.0f, 1.0f)]
+    public float MultCrit;
 
-		#region Multipliers
+    [DefaultValue(0.01f)]
+    [Range(0.0f, 1.0f)]
+    public float MultKnockback;
 
-		[Header($"${nsLocalization}.MultipliersHeader")]
+	#endregion
 
-        [DefaultValue(0.5f)]
-        [Range(0.0f, 1.0f)]
-        public float MultDefense;
+	#region WIP
 
-		[DefaultValue(0.5f)]
-		[Range(0.0f, 1.0f)]
-		public float MultDamage;
+	[Header($"$Mods.WeaponFusion.Global.WorkInProgress")]
 
-        [DefaultValue(0.1f)]
-        [Range(0.0f, 1.0f)]
-        public float MultCrit;
+	[DefaultValue(false)]
+	public bool EnabledCommands;
 
-        [DefaultValue(0.01f)]
-        [Range(0.0f, 1.0f)]
-        public float MultKnockback;
+	#endregion
 
-		#endregion
+	public static event ConfigurationChangedEventHandler ConfigurationChanged;
+	public delegate void ConfigurationChangedEventHandler();
 
-		#region WIP
-
-		[Header($"$Mods.WeaponFusion.Global.WorkInProgress")]
-
-		[DefaultValue(false)]
-		public bool EnabledCommands;
-
-		#endregion
-
-		public static event ConfigurationChangedEventHandler ConfigurationChanged;
-		public delegate void ConfigurationChangedEventHandler();
-
-		public override void OnChanged()
-		{
-			ConfigurationChanged?.Invoke();
-		}
+	public override void OnChanged()
+	{
+		ConfigurationChanged?.Invoke();
 	}
 }

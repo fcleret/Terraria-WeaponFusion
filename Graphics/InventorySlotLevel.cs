@@ -5,28 +5,21 @@ using Terraria;
 using Terraria.GameContent;
 using Terraria.UI;
 
-namespace WeaponFusion.Graphics
+namespace WeaponFusion.Graphics;
+
+public class InventorySlotLevel(Item item, int level) : UIElement
 {
-    public class InventorySlotLevel : UIElement
+    private readonly Item _item = item;
+    private readonly int _level = level;
+
+    protected override void DrawSelf(SpriteBatch spriteBatch)
     {
-        private Item _item;
-        private int _level;
+        base.DrawSelf(spriteBatch);
 
-        public InventorySlotLevel(Item item, int level)
-        {
-            _item = item;
-            _level = level;
-        }
+        DynamicSpriteFont mouseText = FontAssets.MouseText.Value;
+        CalculatedStyle dimensions = GetInnerDimensions();
+        Vector2 pos = new(dimensions.X + dimensions.Width + 4f, dimensions.Y + dimensions.Height - mouseText.MeasureString(_level.ToString()).Y - 4f);
 
-        protected override void DrawSelf(SpriteBatch spriteBatch)
-        {
-            base.DrawSelf(spriteBatch);
-
-            DynamicSpriteFont mouseText = FontAssets.MouseText.Value;
-            CalculatedStyle dimensions = GetInnerDimensions();
-            Vector2 pos = new(dimensions.X + dimensions.Width + 4f, dimensions.Y + dimensions.Height - mouseText.MeasureString(_level.ToString()).Y - 4f);
-
-            spriteBatch.DrawString(mouseText, _level.ToString(), pos, Color.White);
-        }
+        spriteBatch.DrawString(mouseText, _level.ToString(), pos, Color.White);
     }
 }

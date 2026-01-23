@@ -6,208 +6,228 @@ using Terraria.ID;
 using Terraria.ModLoader;
 using WeaponFusion.Items;
 
-namespace WeaponFusion.Utils
+namespace WeaponFusion.Utils;
+
+public static class MergeHelper
 {
-    public static class MergeHelper
+    #region Fields
+
+    private static readonly Dictionary<int, bool> _compatibilityCache = [];
+
+    #endregion
+
+    #region Methods
+
+    // Check if an item can be demerge
+    public static bool CanDemerge(Item item)
 	{
-		#region Methods
+		return IsCompatible(item)
+			&& item.stack == 1
+			&& !item.favorited
+			&& Main.keyState.PressingControl();
+	}
 
-		// Check if an item can be demerge
-		public static bool CanDemerge(Item item)
-		{
-			return IsCompatible(item)
-				&& item.stack == 1
-				&& !item.favorited
-				&& Main.keyState.PressingControl();
-		}
+	// Check if an item can be merge
+	public static bool CanMerge(Item item)
+	{
+		return IsCompatible(item)
+			&& item.stack == 1
+			&& !IsMaxLevel(item)
+			&& GetCombustibleItems(item, Main.CurrentPlayer, true).Count > 0
+			&& !Main.keyState.PressingControl();
+	}
 
-		// Check if an item can be merge
-		public static bool CanMerge(Item item)
+	// Demerge all items from one
+	public static void DoDemerge(Item item, Player player, int recursiveCount)
+	{
+		if (GetLevel(item) > 1)
 		{
-			return IsCompatible(item)
-				&& item.stack == 1
-				&& !IsMaxLevel(item)
-				&& GetCombustibleItems(item, Main.CurrentPlayer, true).Count > 0
-				&& !Main.keyState.PressingControl();
-		}
+			Item demergedItem = new();
+			demergedItem.SetDefaults(item.netID);
 
-		// Demerge all items from one
-		public static void DoDemerge(Item item, Player player, int recursiveCount)
-		{
-			if (GetLevel(item) > 1)
+			SetLevel(item, GetLevel(item) - 1);
+			SetLevel(demergedItem, GetLevel(item));
+
+			if (recursiveCount > 0)
 			{
-				Item demergedItem = new();
-				demergedItem.SetDefaults(item.netID);
-
-				SetLevel(item, GetLevel(item) - 1);
-				SetLevel(demergedItem, GetLevel(item));
-
-				if (recursiveCount > 0)
-				{
-					DoDemerge(item, player, recursiveCount - 1);
-					DoDemerge(demergedItem, player, recursiveCount - 1);
-				}
-
-				// Drop demerged item
-				player.DropItem(demergedItem.GetSource_FromThis(), player.position, ref demergedItem);
+				DoDemerge(item, player, recursiveCount - 1);
+				DoDemerge(demergedItem, player, recursiveCount - 1);
 			}
+
+			// Drop demerged item
+			player.DropItem(demergedItem.GetSource_FromThis(), player.position, ref demergedItem);
 		}
+	}
 
-		// 
-		public static void DoMerge(Item item, Player player, bool isMergeAll)
+	// Merge an item with an another(s)
+	public static void DoMerge(Item item, Player player, bool isMergeAll)
+	{
+		if (isMergeAll)
 		{
-			if (isMergeAll)
+			List<Item> items = [.. GetCombustibleItems(item, player)
+				.OrderBy(GetLevel)
+				.Prepend(item)];
+
+            bool hasMerged = false;
+			do
 			{
-				List<Item> items = GetCombustibleItems(item, player).OrderByDescending(GetLevel).ToList();
-				items.Add(item);
-				items.Reverse();
+                List<int> levels = [.. items.Select(GetLevel)
+					.Where(e => e < WeaponFusionConfig.Current.MaxLevel)
+					.Distinct()];
 
-				bool hasMerged = true;
-				while (hasMerged)
+				foreach (int level in levels)
 				{
-					hasMerged = false;
+					List<Item> levelItems = [.. items.Where(e => GetLevel(e) == level)];
+					int count = levelItems.Count;
 
-					List<int> levels = items.Select(GetLevel).Where(e => e < WeaponFusionConfig.Current.MaxLevel).Distinct().ToList();
-					foreach (int level in levels)
+					while (count > 1)
 					{
-						List<Item> levelItems = items.Where(e => GetLevel(e) == level).ToList();
-						int count = levelItems.Count;
+						Item mergeItem = levelItems[0];
+						Item combustibleItem = levelItems[1];
 
-						while (count > 1)
-						{
-							Item mergeItem = levelItems[0];
-							Item combustibleItem = levelItems[1];
+						SetLevel(mergeItem, GetLevel(mergeItem) + 1);
+						combustibleItem.TurnToAir();
 
-							SetLevel(mergeItem, GetLevel(mergeItem) + 1);
-							combustibleItem.TurnToAir();
+						levelItems.Remove(mergeItem);
+						levelItems.Remove(combustibleItem);
+						items.Remove(combustibleItem);
 
-							levelItems.Remove(mergeItem);
-							levelItems.Remove(combustibleItem);
-							items.Remove(combustibleItem);
-
-							count -= 2;
-							hasMerged = true;
-						}
+						count -= 2;
+						hasMerged = true;
 					}
 				}
 			}
-			else if (GetCombustibleItems(item, player, true).FirstOrDefault() is Item combustibleItem)
-			{
-					SetLevel(item, GetLevel(item) + 1);
-					combustibleItem.TurnToAir();
-			}
-		}
-
-		// Return all same items to merge on it
-		public static List<Item> GetCombustibleItems(Item item, Player player, bool checkSameLevel = false)
+			while (hasMerged);
+        }
+		else if (GetCombustibleItems(item, player, true).FirstOrDefault() is Item combustibleItem)
 		{
-			List<Item> items = new();
-			foreach (Item combustibleItem in player.inventory)
+				SetLevel(item, GetLevel(item) + 1);
+				combustibleItem.TurnToAir();
+		}
+	}
+
+	// Return all same items to merge on it
+	public static List<Item> GetCombustibleItems(Item item, Player player, bool checkSameLevel = false)
+	{
+        List<Item> items = [];
+		foreach (Item inventoryItem in player.inventory)
+		{
+			if (!inventoryItem.Equals(player.HeldItem)
+				&& !inventoryItem.Equals(item)
+				&& inventoryItem.netID == item.netID
+				&& !inventoryItem.favorited)
 			{
-				if (!combustibleItem.Equals(player.HeldItem)
-					&& !combustibleItem.Equals(item)
-					&& combustibleItem.netID == item.netID
-					&& !combustibleItem.favorited)
+				if (checkSameLevel)
 				{
-					if (checkSameLevel)
+					if (GetLevel(item) == GetLevel(inventoryItem))
 					{
-						if (GetLevel(item) == GetLevel(combustibleItem))
-						{
-							items.Add(combustibleItem);
-							break;
-						}
-					}
-					else
-					{
-						items.Add(combustibleItem);
+						items.Add(inventoryItem);
+						break;
 					}
 				}
+				else
+				{
+					items.Add(inventoryItem);
+				}
 			}
-			return items;
 		}
+		return items;
+	}
 
-		// Return stats influenced by leveling
-		public static List<EStatType> GetCompatibleStats(Item item)
+	// Return stats influenced by leveling
+	public static List<EStatType> GetCompatibleStats(Item item)
+	{
+		List<EStatType> compatibleStats = [];
+		if (item.damage > 0)
 		{
-			List<EStatType> compatibleStats = new();
-			if (item.damage > 0)
-			{
-				compatibleStats.Add(EStatType.Damage);
-				if (item.DamageType.UseStandardCritCalcs)
-					compatibleStats.Add(EStatType.Critical);
-				if (item.knockBack > 0)
-					compatibleStats.Add(EStatType.Knockback);
-			}
-			if (item.defense > 0)
-				compatibleStats.Add(EStatType.Defense);
+			compatibleStats.Add(EStatType.Damage);
 
-			return compatibleStats;
+			if (item.DamageType.UseStandardCritCalcs)
+				compatibleStats.Add(EStatType.Critical);
+
+			if (item.knockBack > 0)
+				compatibleStats.Add(EStatType.Knockback);
 		}
 
-		// Return item's level
-		public static int GetLevel(Item item)
-		{
-			return item.GetGlobalItem<ModGlobalItem>().level;
-		}
+		if (item.defense > 0)
+			compatibleStats.Add(EStatType.Defense);
 
-        // Get multiplier based on item's level
-        public static float GetMultiplicative(Item item, float multiplier)
-		{
-			return 1 + (multiplier * (GetLevel(item) - 1));
-		}
+		return compatibleStats;
+	}
 
-        // Return value based on item's level
-        public static int GetValueByLevel(int initialValue, int level, float multiplier)
-		{
-			int returnValue = (int)(initialValue + ((level - 1) * initialValue * multiplier));
-			return returnValue < 0 ? 0 : returnValue;
-		}
+	// Return item's level
+	public static int GetLevel(Item item)
+	{
+		return item.GetGlobalItem<ModGlobalItem>().level;
+	}
 
-		// Check if an item can have levels
-		public static bool IsCompatible(Item item)
-		{
-			bool isBlacklisted = WeaponFusionConfig.Current.Blacklist.Any(e => e.Type == item.netID);
-			return item.netID != ItemID.None
-				&& !isBlacklisted
-				// && item.stack == 1
-				&& GetCompatibleStats(item).Count > 0;
-		}
+    // Get multiplier based on item's level
+    public static float GetMultiplicative(Item item, float multiplier)
+	{
+		return 1 + (multiplier * (GetLevel(item) - 1));
+	}
 
-		// Check if item's level is maxed
-		public static bool IsMaxLevel(Item item)
-		{
-			return GetLevel(item) >= WeaponFusionConfig.Current.MaxLevel;
-		}
+    // Return value based on item's level
+    public static int GetValueByLevel(int initialValue, int level, float multiplier)
+	{
+		int returnValue = (int)(initialValue + ((level - 1) * initialValue * multiplier));
+		return returnValue < 0 ? 0 : returnValue;
+	}
 
-		// Set level for item
-		public static void SetLevel(Item item, int value)
-		{
-			item.GetGlobalItem<ModGlobalItem>().level = value;
-
-			// Summon is a special class
-			if (item.DamageType == DamageClass.Summon)
-				item.damage = (int)(item.OriginalDamage * GetMultiplicative(item, WeaponFusionConfig.Current.MultDamage));
-
-			// Defense need to be update here
-			if (item.OriginalDefense > 0)
-				item.defense = GetValueByLevel(item.OriginalDefense, value, WeaponFusionConfig.Current.MultDefense);
-
-			// Update item's price
-			item.shopCustomPrice = Math.Min(Math.Pow(2, value - 1) * (double)item.value, int.MaxValue);
-		}
-
-        #endregion
-    }
-
-    #region Enums
-
-    public enum EStatType
+	// Check if an item can have levels (result saved in cache)
+	public static bool IsCompatible(Item item)
     {
-        Damage,
-        Defense,
-        Critical,
-        Knockback
+        int id = item.netID;
+        if (_compatibilityCache.TryGetValue(id, out bool cached))
+            return cached;
+
+        bool result = item.netID != ItemID.None
+            && !WeaponFusionConfig.Current.Blacklist.Any(e => e.Type == item.netID)
+            && GetCompatibleStats(item).Count > 0;
+
+        _compatibilityCache[id] = result;
+        return result;
     }
+
+	// Check if item's level is maxed
+	public static bool IsMaxLevel(Item item)
+	{
+		return GetLevel(item) >= WeaponFusionConfig.Current.MaxLevel;
+	}
+
+	// Set level for item
+	public static void SetLevel(Item item, int value)
+	{
+		item.GetGlobalItem<ModGlobalItem>().level = value;
+
+		// Summon is a special class
+		if (item.DamageType == DamageClass.Summon)
+			item.damage = (int)(item.OriginalDamage * GetMultiplicative(item, WeaponFusionConfig.Current.MultDamage));
+
+		// Defense need to be update here
+		if (item.OriginalDefense > 0)
+			item.defense = GetValueByLevel(item.OriginalDefense, value, WeaponFusionConfig.Current.MultDefense);
+
+		// Update item's price
+		item.shopCustomPrice = (int)Math.Min(Math.Pow(2, value - 1) * (double)item.value, int.MaxValue);
+	}
+
+	public static void UnloadCache()
+	{
+		_compatibilityCache.Clear();
+	}
 
     #endregion
 }
+
+#region Enums
+
+public enum EStatType
+{
+    Damage,
+    Defense,
+    Critical,
+    Knockback
+}
+
+#endregion
