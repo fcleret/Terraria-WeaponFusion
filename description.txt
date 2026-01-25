@@ -30,6 +30,9 @@ Unmerge items (drop new items)
 
 # Summary of updates
 
+v2.1.5:
+- Fix a loop issue when merging items
+
 v2.1.4:
 - Fix lagging issue by removing configs sync and creating cache
 

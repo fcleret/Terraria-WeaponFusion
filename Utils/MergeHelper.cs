@@ -68,9 +68,10 @@ public static class MergeHelper
 				.OrderBy(GetLevel)
 				.Prepend(item)];
 
-            bool hasMerged = false;
+            bool hasMerged;
 			do
 			{
+				hasMerged = false;
                 List<int> levels = [.. items.Select(GetLevel)
 					.Where(e => e < WeaponFusionConfig.Current.MaxLevel)
 					.Distinct()];
